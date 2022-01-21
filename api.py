@@ -198,6 +198,7 @@ def get_all_users(current_user):
 
 
 
+
 if not os.path.exists('db.sqlite'):
     db.create_all()
     u = User(name="admin")
