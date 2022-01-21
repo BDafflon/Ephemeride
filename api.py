@@ -199,11 +199,13 @@ def get_all_users(current_user):
 
 
 
-if not os.path.exists('db.sqlite'):
+try:
     db.create_all()
     u = User(name="admin")
     u.password = generate_password_hash("azerty")
     u.rank = 0
     db.session.add(u)
     db.session.commit()
+except:
+    print("OK")
 app.run()
