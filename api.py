@@ -198,14 +198,11 @@ def get_all_users(current_user):
 
 
 
-
-if __name__ == '__main__':
-
-    if not os.path.exists('db.sqlite'):
-        db.create_all()
-        u = User(name="admin")
-        u.password = generate_password_hash("azerty")
-        u.rank = 0
-        db.session.add(u)
-        db.session.commit()
-    app.run()
+if not os.path.exists('db.sqlite'):
+    db.create_all()
+    u = User(name="admin")
+    u.password = generate_password_hash("azerty")
+    u.rank = 0
+    db.session.add(u)
+    db.session.commit()
+app.run()
