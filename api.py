@@ -40,25 +40,31 @@ class Stats(db.Model):
     streak = db.Column(db.Integer)
     score = db.Column(db.Integer)
 
+class Indice(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    id_question = db.Column(db.Integer)
+    indice = db.Column(db.String(128))
+    def serialize(self):
+        """Return object data in easily serializable format"""
+        return {
+            'id': self.id,
+            'id_question': self.id_question,
+            'indice': self.indice
+
+        }
+
 class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     date_question = db.Column(db.Integer)
     answer = db.Column(db.String(128))
-    indice1 = db.Column(db.String(128))
-    indice2 = db.Column(db.String(128))
-    indice3 = db.Column(db.String(128))
-    indice4 = db.Column(db.String(128))
+
 
     def serialize(self):
         """Return object data in easily serializable format"""
         return {
             'id': self.id,
             'date_question': self.date_question,
-            'answer': self.answer,
-            'indice1': self.indice1,
-            'indice2': self.indice2,
-            'indice3': self.indice3,
-            'indice4': self.indice4
+            'answer': self.answer
 
         }
 
@@ -149,16 +155,22 @@ def get_wiki_ephemerides(d):
     question = Question()
     question.date_question=d
     question.answer=annee
-    random.shuffle(indice)
-    question.indice1=indice[0]
-    question.indice2 = indice[1]
-    question.indice3 = indice[2]
-    question.indice4 = indice[3]
-
     db.session.add(question)
     db.session.commit()
 
-    return question
+    q = question.serialize()
+    q["indices"]=[]
+    for i in indice:
+        var = Indice()
+        var.id_question = question.id
+        var.indice = i
+        db.session.add(var)
+        db.session.commit()
+        q["indices"].append(var.serialize())
+
+
+
+    return q
 
 
 
@@ -168,44 +180,27 @@ def get_question():
     id_date = datetime.datetime.timestamp(datetime.datetime.strptime(today.strftime("%d/%m/%Y"), "%d/%m/%Y"))
     question = Question.query.filter_by(date_question=id_date).first()
     if question == None:
-        question = get_wiki_ephemerides(id_date)
+        q = get_wiki_ephemerides(id_date)
+    else:
+        q = question.serialize()
+        q["indices"] = []
+        indices = Indice.query.filter_by(id_question=question.id).all()
+        for i in indices:
+            q["indices"].append(i.serialize())
 
-
-    return jsonify(question.serialize())
-
-
-#----------------------------------------- USER ------------------------------
-@app.route('/user', methods=['GET'])
-@token_required
-def get_all_users(current_user):
-
-    if current_user.rank!=0:
-        return jsonify({'message' : 'Cannot perform that function!'})
-
-    users = User.query.all()
-
-    output = []
-
-    for user in users:
-        user_data = {}
-        user_data['public_id'] = user.public_id
-        user_data['name'] = user.name
-        user_data['password'] = user.password
-        user_data['rank'] = user.rank
-        output.append(user_data)
-
-    return jsonify({'users' : output})
+    return jsonify(q)
 
 
 
 
-try:
-    db.create_all()
-    u = User(name="admin")
-    u.password = generate_password_hash("azerty")
-    u.rank = 0
-    db.session.add(u)
-    db.session.commit()
-except:
-    print("OK")
-app.run()
+
+if __name__ == '__main__':
+
+    if not os.path.exists('db.sqlite'):
+        db.create_all()
+        u = User(name="admin")
+        u.password = generate_password_hash("azerty")
+        u.rank = 0
+        db.session.add(u)
+        db.session.commit()
+    app.run(host="0.0.0.0",port=8123,debug=True)
