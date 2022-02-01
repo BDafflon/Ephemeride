@@ -23,7 +23,7 @@ app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 app.config['CORS_HEADERS'] = 'Content-Type'
 
 db = SQLAlchemy(app)
-#rover = Rover()
+modeJeu=False
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -179,7 +179,7 @@ def get_question():
     today = datetime.date.today()
     id_date = datetime.datetime.timestamp(datetime.datetime.strptime(today.strftime("%d/%m/%Y"), "%d/%m/%Y"))
     question = Question.query.filter_by(date_question=id_date).first()
-    if question == None:
+    if question == None or modeJeu==False:
         q = get_wiki_ephemerides(id_date)
     else:
         q = question.serialize()
